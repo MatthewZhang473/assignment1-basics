@@ -19,18 +19,15 @@ def pretokenize_chunk(args):
     chunk_text, pattern, show_progress = args
     token_counts = defaultdict(int)
     
-    matches = list(re.finditer(pattern, chunk_text))
-    iterator = tqdm(matches, desc="Pretokenizing chunk") if show_progress else matches
-    
-    for m in iterator:
+    for m in tqdm(re.finditer(pattern, chunk_text), desc="Pretokenizing chunk", disable=not show_progress):
         b = m.group().encode("utf-8")
         token_counts[tuple(bytes([x]) for x in b)] += 1
     return token_counts
 
 
-def train_bpe(filepath: str, target_vocab_size: int, debug=False, num_processes=4):
+def train_bpe(input_path: str, vocab_size: int, special_tokens = ["<|endoftext|>"], debug=False, num_processes=4):
     """
-    Trains a byte-pair encoding (BPE) tokenizer on `text` until `target_vocab_size` is reached.
+    Trains a byte-pair encoding (BPE) tokenizer on `text` until `vocab_size` is reached.
 
     Returns:
         vocab (dict[int, bytes]): Final vocabulary mapping token IDs to byte tokens.
@@ -39,24 +36,25 @@ def train_bpe(filepath: str, target_vocab_size: int, debug=False, num_processes=
 
     pattern = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
     vocab = [bytes([i]) for i in range(256)]
-    special_token = b"<|endoftext|>"
-    special_token_str = special_token.decode("utf-8")
-    vocab.append(special_token)
+    special_tokens = [st.encode('utf8') for st in special_tokens]
+    vocab += special_tokens
 
     # Parallel pretokenization
     token_counts = defaultdict(int)
-    with open(filepath, "rb") as f:
+    with open(input_path, "rb") as f:
         boundaries = find_chunk_boundaries(f, num_processes, b"<|endoftext|>")
 
         # Read all chunks
         chunks = []
         for start, end in zip(boundaries[:-1], boundaries[1:]):
             f.seek(start)
-            chunk = f.read(end - start).decode("utf-8", errors="ignore")
-            chunk = chunk.replace(special_token_str, "")
-            chunks.append(chunk)
-            if debug:
-                print(chunk[0:100])
+            chunk = f.read(end - start).decode("utf-8", errors="replace")
+            # Split the chunk on any special token so merges can't cross them
+            pattern_specials = "|".join(re.escape(st.decode("utf-8")) for st in special_tokens)
+            segments = re.split(pattern_specials, chunk)
+            # Filter out empty strings
+            segments = [seg for seg in segments if seg.strip()]
+            chunks.extend(segments)
         
         # Prepare arguments with progress flag for first chunk only
         chunk_args = [
@@ -101,7 +99,7 @@ def train_bpe(filepath: str, target_vocab_size: int, debug=False, num_processes=
         return tuple(result)
 
     merges = []
-    while len(vocab) < target_vocab_size:
+    while len(vocab) < vocab_size:
         if not pair_freqs:
             print("No more pairs to merge")
             break
@@ -150,6 +148,7 @@ def train_bpe(filepath: str, target_vocab_size: int, debug=False, num_processes=
 
 if __name__ == "__main__":
     file_path = "data/TinyStoriesV2-GPT4-valid.txt"
-    N = 200
-    vocab, merges = train_bpe(filepath=file_path, target_vocab_size=256+N)
+    # file_path = "data/debug.txt"
+    N = 100
+    vocab, merges = train_bpe(input_path=file_path, vocab_size=256+N, special_tokens=["<|endoftext|>"])
     print([vocab[i] for i in range(256, 256+N)])
