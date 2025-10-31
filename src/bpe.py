@@ -147,7 +147,7 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens = ["<|endoftext|>
 
 
 if __name__ == "__main__":
-    file_path = "data/TinyStoriesV2-GPT4-train.txt"
+    file_path = "data/TinyStoriesV2-GPT4-valid.txt"
     # file_path = "data/debug.txt"
     N = 100
     vocab, merges = train_bpe(input_path=file_path, vocab_size=256+N, special_tokens=["<|endoftext|>"])

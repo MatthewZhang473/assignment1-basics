@@ -139,7 +139,7 @@ def heap_bpe(token_counts, base_vocab, vocab_size, debug=False):
 # ------------------------------------------------------------
 #  Full training pipeline
 # ------------------------------------------------------------
-def train_bpe(input_path: str, vocab_size: int, special_tokens = [b"<|endoftext|>"], debug=False, num_processes=4):
+def train_bpe(input_path: str, vocab_size: int, special_tokens = ["<|endoftext|>"], debug=False, num_processes=4):
     """
     Trains a byte-pair encoding (BPE) tokenizer on `input_path` until `vocab_size` is reached.
     Returns:
@@ -148,6 +148,7 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens = [b"<|endoftext|
     """
     pattern = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
     vocab = [bytes([i]) for i in range(256)]
+    special_tokens = [st.encode('utf8') for st in special_tokens]
     vocab += special_tokens
 
     token_counts = defaultdict(int)
@@ -157,10 +158,13 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens = [b"<|endoftext|
         chunks = []
         for start, end in zip(boundaries[:-1], boundaries[1:]):
             f.seek(start)
-            chunk = f.read(end - start).decode("utf-8", errors="ignore")
-            for st in special_tokens:
-                chunk = chunk.replace(st.decode("utf-8"), "")
-            chunks.append(chunk)
+            chunk = f.read(end - start).decode("utf-8", errors="replace")
+            # Split the chunk on any special token so merges can't cross them
+            pattern_specials = "|".join(re.escape(st.decode("utf-8")) for st in special_tokens)
+            segments = re.split(pattern_specials, chunk)
+            # Filter out empty strings
+            segments = [seg for seg in segments if seg.strip()]
+            chunks.extend(segments)
 
         chunk_args = [(chunk, pattern, i == 0) for i, chunk in enumerate(chunks)]
         with Pool(num_processes) as pool:
@@ -182,7 +186,7 @@ if __name__ == "__main__":
     file_path = "data/TinyStoriesV2-GPT4-valid.txt"
     file_path = "data/debug.txt"
     N = 18
-    vocab, merges = train_bpe(input_path=file_path, vocab_size=256 + N)
+    vocab, merges = train_bpe(input_path=file_path, vocab_size=256 + N, special_tokens=["<|endoftext|>"])
     # print([vocab[i] for i in range(256, 256 + N)])
     
     print(merges)
