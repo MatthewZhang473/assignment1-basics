@@ -4,7 +4,6 @@ Potential improvements:
 - this avoid scanning all pretokens for every update
 """
 
-
 from collections import defaultdict
 import regex as re
 from pprint import pprint
@@ -26,14 +25,24 @@ def pretokenize_chunk(args):
     """
     chunk_text, pattern, show_progress = args
     token_counts = defaultdict(int)
-    
-    for m in tqdm(re.finditer(pattern, chunk_text), desc="Pretokenizing chunk", disable=not show_progress):
+
+    for m in tqdm(
+        re.finditer(pattern, chunk_text),
+        desc="Pretokenizing chunk",
+        disable=not show_progress,
+    ):
         b = m.group().encode("utf-8")
         token_counts[tuple(bytes([x]) for x in b)] += 1
     return token_counts
 
 
-def train_bpe(input_path: str, vocab_size: int, special_tokens = ["<|endoftext|>"], debug=False, num_processes=4):
+def train_bpe(
+    input_path: str,
+    vocab_size: int,
+    special_tokens=["<|endoftext|>"],
+    debug=False,
+    num_processes=4,
+):
     """
     Trains a byte-pair encoding (BPE) tokenizer on `text` until `vocab_size` is reached.
 
@@ -42,9 +51,11 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens = ["<|endoftext|>
         merges (list[tuple[bytes, bytes]]): List of BPE merges in creation order.
     """
 
-    pattern = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+    pattern = (
+        r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+    )
     vocab = [bytes([i]) for i in range(256)]
-    special_tokens = [st.encode('utf8') for st in special_tokens]
+    special_tokens = [st.encode("utf8") for st in special_tokens]
     vocab += special_tokens
 
     # Parallel pretokenization
@@ -58,17 +69,16 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens = ["<|endoftext|>
             f.seek(start)
             chunk = f.read(end - start).decode("utf-8", errors="replace")
             # Split the chunk on any special token so merges can't cross them
-            pattern_specials = "|".join(re.escape(st.decode("utf-8")) for st in special_tokens)
+            pattern_specials = "|".join(
+                re.escape(st.decode("utf-8")) for st in special_tokens
+            )
             segments = re.split(pattern_specials, chunk)
             # Filter out empty strings
             segments = [seg for seg in segments if seg.strip()]
             chunks.extend(segments)
-        
+
         # Prepare arguments with progress flag for first chunk only
-        chunk_args = [
-            (chunk, pattern, i == 0) 
-            for i, chunk in enumerate(chunks)
-        ]
+        chunk_args = [(chunk, pattern, i == 0) for i, chunk in enumerate(chunks)]
 
         # Process chunks in parallel
         with Pool(num_processes) as pool:
@@ -95,10 +105,10 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens = ["<|endoftext|>
     ##### Don't change the code below #####
 
     def merge_pretoken(tokens: tuple, pair: tuple) -> tuple:
-        merged = b''.join(pair)
+        merged = b"".join(pair)
         result, i, n = [], 0, len(pair)
         while i < len(tokens):
-            if tokens[i:i+n] == pair:
+            if tokens[i : i + n] == pair:
                 result.append(merged)
                 i += n
             else:
@@ -158,9 +168,11 @@ def main():
     file_path = "data/TinyStoriesV2-GPT4-valid.txt"
     # file_path = "data/debug.txt"
     N = 100
-    vocab, merges = train_bpe(input_path=file_path, vocab_size=256+N, special_tokens=["<|endoftext|>"])
-    print([vocab[i] for i in range(256, 256+N)])
-    
+    vocab, merges = train_bpe(
+        input_path=file_path, vocab_size=256 + N, special_tokens=["<|endoftext|>"]
+    )
+    print([vocab[i] for i in range(256, 256 + N)])
+
 
 if __name__ == "__main__":
-    cProfile.run('main()', 'profiling/bpe.prof')
+    cProfile.run("main()", "profiling/bpe.prof")

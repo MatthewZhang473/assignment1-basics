@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 
+
 class Linear(nn.Module):
     def __init__(self, in_features, out_features, device=None, dtype=None):
         """Construct a linear transformation module"""
@@ -10,6 +11,8 @@ class Linear(nn.Module):
         nn.init.trunc_normal_(W, mean=0, std=std, a=-3, b=3)
         self.W = nn.Parameter(W)
 
-    def forward(self, x:torch.Tensor)->torch.Tensor:
-        y = torch.einsum("btd,od->bto", x, self.W)
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        y = torch.einsum(
+            "batch sequence d_in, d_out d_in -> batch sequence d_out", x, self.W
+        )
         return y
