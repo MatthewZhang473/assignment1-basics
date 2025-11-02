@@ -11,6 +11,7 @@ from torch import Tensor
 from src.bpe import train_bpe
 from src.linear import Linear
 from src.tokenizer import Tokenizer
+from src.embedding import Embedding
 
 
 def run_linear(
@@ -31,13 +32,13 @@ def run_linear(
     Returns:
         Float[Tensor, "... d_out"]: The transformed output of your linear module.
     """
-    
+
     print(f"d_in = {d_in}, d_out = {d_out}")
     print(f"weights shape = {weights.shape}")
     print(f"x shape = {in_features.shape}")
-    
-    linear_module = Linear(in_features=d_in, out_features=d_out, device='cpu')
-    state_dict = {"W":weights}
+
+    linear_module = Linear(in_features=d_in, out_features=d_out, device="cpu")
+    state_dict = {"W": weights}
     linear_module.load_state_dict(state_dict=state_dict)
     return linear_module(in_features)
 
@@ -60,8 +61,10 @@ def run_embedding(
     Returns:
         Float[Tensor, "... d_model"]: Batch of embeddings returned by your Embedding layer.
     """
+    embd = Embedding(num_embeddings=vocab_size, embedding_dim=d_model, device="cpu")
+    embd.embd_mat.data = weights
 
-    raise NotImplementedError
+    return embd(token_ids)
 
 
 def run_swiglu(
@@ -462,7 +465,9 @@ def run_cross_entropy(
     raise NotImplementedError
 
 
-def run_gradient_clipping(parameters: Iterable[torch.nn.Parameter], max_l2_norm: float) -> None:
+def run_gradient_clipping(
+    parameters: Iterable[torch.nn.Parameter], max_l2_norm: float
+) -> None:
     """Given a set of parameters, clip their combined gradients to have l2 norm at most max_l2_norm.
 
     Args:
@@ -569,7 +574,7 @@ def get_tokenizer(
     Returns:
         A BPE tokenizer that uses the provided vocab, merges, and special tokens.
     """
-    
+
     tkzr = Tokenizer(vocab=vocab, merges=merges, special_tokens=special_tokens)
     return tkzr
 
@@ -601,4 +606,6 @@ def run_train_bpe(
                 representing that <token1> was merged with <token2>.
                 Merges are ordered by order of creation.
     """
-    return train_bpe(input_path=input_path, vocab_size=vocab_size, special_tokens=special_tokens)
+    return train_bpe(
+        input_path=input_path, vocab_size=vocab_size, special_tokens=special_tokens
+    )
