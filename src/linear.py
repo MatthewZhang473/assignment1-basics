@@ -12,7 +12,5 @@ class Linear(nn.Module):
         self.W = nn.Parameter(W)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        y = torch.einsum(
-            "batch sequence d_in, d_out d_in -> batch sequence d_out", x, self.W
-        )
+        y = torch.einsum("b s i, o i -> b s o", x, self.W)
         return y
