@@ -1,9 +1,17 @@
+"""
+Potential improvements:
+- use a postion map 'word_pair_pos' to map from pair to pretoken_ids
+- this avoid scanning all pretokens for every update
+"""
+
+
 from collections import defaultdict
 import regex as re
 from pprint import pprint
 from cs336_basics import find_chunk_boundaries
 from multiprocessing import Pool
 from tqdm import tqdm
+import cProfile
 
 
 def pretokenize_chunk(args):
@@ -146,9 +154,13 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens = ["<|endoftext|>
     return vocab, merges
 
 
-if __name__ == "__main__":
+def main():
     file_path = "data/TinyStoriesV2-GPT4-valid.txt"
     # file_path = "data/debug.txt"
     N = 100
     vocab, merges = train_bpe(input_path=file_path, vocab_size=256+N, special_tokens=["<|endoftext|>"])
     print([vocab[i] for i in range(256, 256+N)])
+    
+
+if __name__ == "__main__":
+    cProfile.run('main()', 'profiling/bpe.prof')
