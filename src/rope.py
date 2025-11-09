@@ -20,13 +20,21 @@ class RotaryPositionalEmbedding(nn.Module):
         self.d_k = d_k  # dimension of query / key vectors
         self.max_seq_len = max_seq_len
         self.device = device
-        inv_freq = 1.0 / (
-            theta
-            ** (torch.arange(0, d_k, 2).to(device=device, dtype=torch.float) / d_k)
-        )
-        self.register_buffer("inv_freq", inv_freq, persistent=False)
+        self.pass_rope = False
+
+        if theta == 0:
+            self.pass_rope = True
+        else:
+            inv_freq = 1.0 / (
+                theta
+                ** (torch.arange(0, d_k, 2).to(device=device, dtype=torch.float) / d_k)
+            )
+            self.register_buffer("inv_freq", inv_freq, persistent=False)
 
     def forward(self, x: torch.Tensor, token_positions: torch.Tensor) -> torch.Tensor:
+
+        if self.pass_rope:
+            return x
 
         freqs = torch.einsum(
             "...n, m -> ...n m", token_positions, self.inv_freq

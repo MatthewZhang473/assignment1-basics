@@ -17,6 +17,9 @@ from src.positionwise_ffw import silu, SwiGLU
 from src.rope import RotaryPositionalEmbedding
 from src.softmax import softmax
 from src.scaled_dot_product_attention import scaled_dot_product_attention
+from src.multihead_self_attention import CausalMultiHeadSelfAttention
+from src.transformer_block import TransformerBlock
+from src.transformer_lm import TransformerLM
 
 
 def run_linear(
@@ -163,7 +166,17 @@ def run_multihead_self_attention(
         Float[Tensor, " ... sequence_length d_out"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    raise NotImplementedError
+
+    cmha = CausalMultiHeadSelfAttention(
+        d_model=d_model, num_heads=num_heads, theta=0, device="cpu"
+    )
+
+    cmha.q_proj.W.data = q_proj_weight
+    cmha.k_proj.W.data = k_proj_weight
+    cmha.v_proj.W.data = v_proj_weight
+    cmha.o_proj.W.data = o_proj_weight
+
+    return cmha(in_features)
 
 
 def run_multihead_self_attention_with_rope(
@@ -203,7 +216,22 @@ def run_multihead_self_attention_with_rope(
         Float[Tensor, " ... sequence_length d_out"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    raise NotImplementedError
+    cmha = CausalMultiHeadSelfAttention(
+        d_model=d_model,
+        num_heads=num_heads,
+        max_seq_len=max_seq_len,
+        theta=theta,
+        device="cpu",
+    )
+
+    cmha.q_proj.W.data = q_proj_weight
+    cmha.k_proj.W.data = k_proj_weight
+    cmha.v_proj.W.data = v_proj_weight
+    cmha.o_proj.W.data = o_proj_weight
+
+    print(token_positions.shape)
+
+    return cmha(x=in_features, token_ids=token_positions)
 
 
 def run_rope(
@@ -302,7 +330,29 @@ def run_transformer_block(
         Float[Tensor, "batch sequence_length d_model"] Tensor with the output of
         running the Transformer block on the input features while using RoPE.
     """
-    raise NotImplementedError
+
+    tb = TransformerBlock(
+        d_model=d_model,
+        num_heads=num_heads,
+        d_ff=d_ff,
+        max_seq_len=max_seq_len,
+        theta=theta,
+        device="cpu",
+    )
+
+    tb.rms1.gain.data = weights["ln1.weight"]
+    tb.rms2.gain.data = weights["ln2.weight"]
+
+    tb.attn.q_proj.W.data = weights["attn.q_proj.weight"]
+    tb.attn.k_proj.W.data = weights["attn.k_proj.weight"]
+    tb.attn.v_proj.W.data = weights["attn.v_proj.weight"]
+    tb.attn.o_proj.W.data = weights["attn.output_proj.weight"]
+
+    tb.ffwd.w2.W.data = weights["ffn.w2.weight"]
+    tb.ffwd.glu.w1.W.data = weights["ffn.w1.weight"]
+    tb.ffwd.glu.w3.W.data = weights["ffn.w3.weight"]
+
+    return tb(in_features)
 
 
 def run_transformer_lm(
@@ -384,7 +434,39 @@ def run_transformer_lm(
         Float[Tensor, "batch_size sequence_length vocab_size"]: Tensor with the predicted unnormalized
         next-word distribution for each token.
     """
-    raise NotImplementedError
+    lm = TransformerLM(
+        d_model=d_model,
+        num_heads=num_heads,
+        d_ff=d_ff,
+        vocab_size=vocab_size,
+        context_length=context_length,
+        num_layers=num_layers,
+        theta=rope_theta,
+        device="cpu",
+    )
+
+    lm.embd.embd_mat.data = weights["token_embeddings.weight"]
+
+    for layer_idx in range(num_layers):
+        layer = lm.tbs[layer_idx]
+        layer.rms1.gain.data = weights[f"layers.{layer_idx}.ln1.weight"]
+        layer.rms2.gain.data = weights[f"layers.{layer_idx}.ln2.weight"]
+
+        layer.attn.q_proj.W.data = weights[f"layers.{layer_idx}.attn.q_proj.weight"]
+        layer.attn.k_proj.W.data = weights[f"layers.{layer_idx}.attn.k_proj.weight"]
+        layer.attn.v_proj.W.data = weights[f"layers.{layer_idx}.attn.v_proj.weight"]
+        layer.attn.o_proj.W.data = weights[
+            f"layers.{layer_idx}.attn.output_proj.weight"
+        ]
+
+        layer.ffwd.w2.W.data = weights[f"layers.{layer_idx}.ffn.w2.weight"]
+        layer.ffwd.glu.w1.W.data = weights[f"layers.{layer_idx}.ffn.w1.weight"]
+        layer.ffwd.glu.w3.W.data = weights[f"layers.{layer_idx}.ffn.w3.weight"]
+
+    lm.rms.gain.data = weights["ln_final.weight"]
+    lm.lm.W.data = weights["lm_head.weight"]
+
+    return lm(in_indices)
 
 
 def run_rmsnorm(
