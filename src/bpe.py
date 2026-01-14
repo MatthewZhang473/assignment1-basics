@@ -154,11 +154,11 @@ def train_bpe(
 
 
 def main():
-    file_path = "data/TinyStoriesV2-GPT4-valid.txt"
+    file_path = "data/TinyStoriesV2-GPT4-train.txt"
     # Ensure profiling dir exists
     os.makedirs("profiling", exist_ok=True)
 
-    num_new_merges = 100
+    num_new_merges = 10000
     vocab, merges = train_bpe(
         input_path=file_path,
         vocab_size=256 + num_new_merges,
