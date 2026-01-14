@@ -1,3 +1,35 @@
+"""
+ROTARY POSITIONAL EMBEDDING (RoPE) MATHEMATICAL EXPLANATION
+
+RoPE applies a rotation to pairs of dimensions in the hidden representation.
+For a 2D vector [x1, x2], a rotation by angle θ is defined by the matrix:
+
+    [ x1' ] = [ cosθ  -sinθ ] [ x1 ] = [ x1*cosθ - x2*sinθ ]
+    [ x2' ]   [ sinθ   cosθ ] [ x2 ]   [ x1*sinθ + x2*cosθ ]
+
+The code optimizes this by grouping the terms:
+    Result = (Original Vector * cosθ) + (Rotated Basis * sinθ)
+
+Let x = [x1, x2].
+Let rotate_adjacent(x) = [-x2, x1].
+
+Then the rotation formula becomes:
+    [x1', x2'] = [x1, x2] * cosθ + [-x2, x1] * sinθ
+               = [x1*cosθ - x2*sinθ, x2*cosθ + x1*sinθ]
+
+In high-dimensional space (d_k), we treat the vector as d_k/2 independent pairs.
+Each pair (j) at token position (m) is rotated by an angle θ_m,j calculated as:
+    θ_m,j = m * (theta ** (-2j / d_k))
+
+Where:
+    - m is the token position (0, 1, 2, ...)
+    - j is the dimension index
+    - theta is the base (typically 10,000)
+
+The code performs this across all pairs simultaneously using element-wise
+multiplication and the `rotate_adjacent` helper to swap and negate values.
+"""
+
 import torch
 from torch import nn
 
