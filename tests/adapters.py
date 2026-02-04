@@ -8,18 +8,18 @@ import numpy.typing as npt
 import torch
 from jaxtyping import Bool, Float, Int
 from torch import Tensor
-from src.bpe import train_bpe
-from src.linear import Linear
-from src.tokenizer import Tokenizer
-from src.embedding import Embedding
-from src.rmsnorm import RMSNorm
-from src.positionwise_ffw import silu, SwiGLU
-from src.rope import RotaryPositionalEmbedding
-from src.softmax import softmax
-from src.scaled_dot_product_attention import scaled_dot_product_attention
-from src.multihead_self_attention import CausalMultiHeadSelfAttention
-from src.transformer_block import TransformerBlock
-from src.transformer_lm import TransformerLM
+from src.tokenizer.bpe import train_bpe
+from src.transformer.linear import Linear
+from src.tokenizer.tokenizer import Tokenizer
+from src.transformer.embedding import Embedding
+from src.transformer.rmsnorm import RMSNorm
+from src.transformer.positionwise_ffw import silu, SwiGLU
+from src.transformer.rope import RotaryPositionalEmbedding
+from src.transformer.softmax import softmax
+from src.transformer.scaled_dot_product_attention import scaled_dot_product_attention
+from src.transformer.multihead_self_attention import CausalMultiHeadSelfAttention
+from src.transformer.transformer_block import TransformerBlock
+from src.transformer.transformer_lm import TransformerLM
 
 
 def run_linear(
