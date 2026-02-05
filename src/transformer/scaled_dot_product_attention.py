@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from src.softmax import softmax
+from src.transformer.softmax import softmax
 
 
 def scaled_dot_product_attention(

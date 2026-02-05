@@ -1,10 +1,10 @@
 from torch import nn
 import torch
-from src.embedding import Embedding
-from src.rmsnorm import RMSNorm
-from src.linear import Linear
-from src.softmax import softmax
-from src.transformer_block import TransformerBlock
+from src.transformer.embedding import Embedding
+from src.transformer.rmsnorm import RMSNorm
+from src.transformer.linear import Linear
+from src.transformer.softmax import softmax
+from src.transformer.transformer_block import TransformerBlock
 
 
 class TransformerLM(nn.Module):

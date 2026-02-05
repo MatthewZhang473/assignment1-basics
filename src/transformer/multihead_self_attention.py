@@ -1,6 +1,6 @@
-from src.scaled_dot_product_attention import scaled_dot_product_attention
-from src.rope import RotaryPositionalEmbedding
-from src.linear import Linear
+from src.transformer.scaled_dot_product_attention import scaled_dot_product_attention
+from src.transformer.rope import RotaryPositionalEmbedding
+from src.transformer.linear import Linear
 import torch
 from torch import nn
 

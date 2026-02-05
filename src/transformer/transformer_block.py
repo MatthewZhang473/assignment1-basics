@@ -1,8 +1,8 @@
 from torch import nn
 import torch
-from src.rmsnorm import RMSNorm
-from src.multihead_self_attention import CausalMultiHeadSelfAttention
-from src.positionwise_ffw import SwiGLU
+from src.transformer.rmsnorm import RMSNorm
+from src.transformer.multihead_self_attention import CausalMultiHeadSelfAttention
+from src.transformer.positionwise_ffw import SwiGLU
 
 
 class TransformerBlock(nn.Module):

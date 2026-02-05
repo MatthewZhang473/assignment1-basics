@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from src.linear import Linear
+from src.transformer.linear import Linear
 import math
 
 
