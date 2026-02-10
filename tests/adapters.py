@@ -22,6 +22,7 @@ from src.transformer.transformer_block import TransformerBlock
 from src.transformer.transformer_lm import TransformerLM
 from src.training.loss import cross_entropy
 from src.training.optimizer import AdamW
+from src.training.gradient_clipping import clip_grad_norm
 
 
 def run_linear(
@@ -581,7 +582,7 @@ def run_gradient_clipping(
 
     The gradients of the parameters (parameter.grad) should be modified in-place.
     """
-    raise NotImplementedError
+    clip_grad_norm(params=parameters, maximum_l2_norm=max_l2_norm)
 
 
 def get_adamw_cls() -> Any:
