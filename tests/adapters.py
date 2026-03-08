@@ -25,6 +25,7 @@ from src.training.loss import cross_entropy
 from src.training.optimizer import AdamW
 from src.training.gradient_clipping import clip_grad_norm
 from src.training_loop.data_loading import get_batch
+from src.training_loop.checkpointing import save_checkpoint, load_checkpoint
 
 
 def run_linear(
@@ -639,7 +640,7 @@ def run_save_checkpoint(
             we've completed.
         out (str | os.PathLike | BinaryIO | IO[bytes]): Path or file-like object to serialize the model, optimizer, and iteration to.
     """
-    raise NotImplementedError
+    save_checkpoint(model, optimizer, iteration, out)
 
 
 def run_load_checkpoint(
@@ -660,7 +661,7 @@ def run_load_checkpoint(
     Returns:
         int: the previously-serialized number of iterations.
     """
-    raise NotImplementedError
+    return load_checkpoint(src, model, optimizer)
 
 
 def get_tokenizer(
