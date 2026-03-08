@@ -5,6 +5,7 @@ from collections.abc import Iterable
 from typing import IO, Any, BinaryIO
 
 import numpy.typing as npt
+import numpy as np
 import torch
 from jaxtyping import Bool, Float, Int
 from torch import Tensor
@@ -23,6 +24,7 @@ from src.transformer.transformer_lm import TransformerLM
 from src.training.loss import cross_entropy
 from src.training.optimizer import AdamW
 from src.training.gradient_clipping import clip_grad_norm
+from src.training_loop.data_loading import get_batch
 
 
 def run_linear(
@@ -534,7 +536,8 @@ def run_get_batch(
         is the sampled input sequences, and the second tuple item is the corresponding
         language modeling labels.
     """
-    raise NotImplementedError
+
+    return get_batch(dataset, batch_size, context_length, device)
 
 
 def run_softmax(in_features: Float[Tensor, " ..."], dim: int) -> Float[Tensor, " ..."]:
