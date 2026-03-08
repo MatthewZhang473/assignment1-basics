@@ -82,9 +82,9 @@ def estimate_split_loss(model, split_tokens, eval_batches, cfg):
     with torch.no_grad():
         for _ in range(eval_batches):
             x, y = get_batch(split_tokens, cfg.batch_size, cfg.context_length, cfg.device)
-            out = model(x)  # (B, T, V)
-            bsz, seq_len, vocab = out.shape
-            loss = cross_entropy(out.view(bsz * seq_len, vocab), y.view(bsz * seq_len))
+            logits = model(x)  # (B, T, V)
+            bsz, seq_len, vocab = logits.shape
+            loss = cross_entropy(logits.view(bsz * seq_len, vocab), y.view(bsz * seq_len))
             losses.append(loss.item())
     model.train()
     return float(np.mean(losses))
@@ -181,9 +181,9 @@ def main(argv=None):
     for it in range(start_iter, cfg.max_iters):
         x, y = get_batch(train_tokens, cfg.batch_size, cfg.context_length, cfg.device)
 
-        probs = model(x)  # (B, T, V)
-        bsz, seq_len, vocab = probs.shape
-        loss = cross_entropy(probs.view(bsz * seq_len, vocab), y.view(bsz * seq_len))
+        logits = model(x)  # (B, T, V)
+        bsz, seq_len, vocab = logits.shape
+        loss = cross_entropy(logits.view(bsz * seq_len, vocab), y.view(bsz * seq_len))
 
         optimizer.zero_grad(set_to_none=True)
         loss.backward()

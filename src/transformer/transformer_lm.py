@@ -3,7 +3,6 @@ import torch
 from src.transformer.embedding import Embedding
 from src.transformer.rmsnorm import RMSNorm
 from src.transformer.linear import Linear
-from src.transformer.softmax import softmax
 from src.transformer.transformer_block import TransformerBlock
 
 
@@ -49,5 +48,4 @@ class TransformerLM(nn.Module):
             x = tb(x)
         x = self.rms(x)
         x = self.lm(x)
-        x = softmax(x, dim=-1)
         return x
