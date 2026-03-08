@@ -49,5 +49,5 @@ class TransformerLM(nn.Module):
             x = tb(x)
         x = self.rms(x)
         x = self.lm(x)
-        x = softmax(x)
+        x = softmax(x, dim=-1)
         return x
